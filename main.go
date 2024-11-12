@@ -34,7 +34,7 @@ func main() {
 	go handleMessages()
 
 	// Iniciar el servidor en el puerto 8080
-	log.Println("Servidor WebSocket iniciado en ws://localhost:8080/ws")
+	log.Println("Servidor WebSocket iniciado en ws://localhost:8088/ws")
 	err := http.ListenAndServe(":8080", nil)
 	if err != nil {
 		log.Fatal("Error al iniciar el servidor:", err)

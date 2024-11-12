@@ -4,10 +4,12 @@ services:
 
   websocket_server:
     build:
-      context: ./server  # Ajusta esto al directorio donde tengas el Dockerfile del servidor
+      context: .  # Ajusta esto al directorio donde tengas el Dockerfile del servidor
       dockerfile: Dockerfile
-    image: websocket_server
-    container_name: websocket_server_container
+    image: pong_server
+    container_name: pong_server_container
+    volumes:
+      - .:/app
     ports:
-      - "8080:8080"  # Mapea el puerto para acceso externo
+      - "8088:8080"  # Mapea el puerto para acceso externo
     tty: true
