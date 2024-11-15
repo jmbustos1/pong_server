@@ -20,10 +20,34 @@ var clients = make(map[*websocket.Conn]bool)
 // Canal para mensajes entre clientes
 var broadcast = make(chan Message)
 
+type Vector struct {
+	X, Y float64
+}
+
+const (
+	screenWidth  = 640
+	screenHeight = 480
+)
+
 // Estructura para los mensajes
 type Message struct {
-	Event string `json:"event"`
-	Data  string `json:"data"`
+	Event        string  `json:"event"`
+	PlayerID     int     `json:"player_id,omitempty"`
+	Direction    string  `json:"direction,omitempty"`
+	BallPosition Vector  `json:"ball_position,omitempty"`
+	Paddle1Y     float64 `json:"paddle1_y,omitempty"`
+	Paddle2Y     float64 `json:"paddle2_y,omitempty"`
+}
+
+// Estructura para sincronizar el estado del juego
+var gameState = struct {
+	BallPos  Vector
+	Paddle1Y float64
+	Paddle2Y float64
+}{
+	BallPos:  Vector{X: screenWidth / 2, Y: screenHeight / 2},
+	Paddle1Y: screenHeight / 2,
+	Paddle2Y: screenHeight / 2,
 }
 
 func main() {
