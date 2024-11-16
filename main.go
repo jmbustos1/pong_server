@@ -3,8 +3,10 @@ package main
 import (
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/hajimehoshi/ebiten/v2"
 )
 
 // Configuración de la conexión WebSocket
@@ -107,5 +109,17 @@ func handleMessages() {
 				delete(clients, client)
 			}
 		}
+	}
+}
+
+func sendPlayerInput(conn *websocket.Conn) {
+	for {
+		if ebiten.IsKeyPressed(ebiten.KeyW) {
+			conn.WriteJSON(Message{Event: "move", Data: "up"})
+		}
+		if ebiten.IsKeyPressed(ebiten.KeyS) {
+			conn.WriteJSON(Message{Event: "move", Data: "down"})
+		}
+		time.Sleep(16 * time.Millisecond) // 60 envíos por segundo
 	}
 }
