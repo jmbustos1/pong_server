@@ -2,6 +2,7 @@ package ws
 
 import (
 	"net/http"
+	"pong_server/game"
 	"sync"
 
 	"github.com/gorilla/websocket"
@@ -25,12 +26,13 @@ var Broadcast = make(chan Message)
 
 // Estructura para mensajes
 type Message struct {
-	Event        string  `json:"event"`
-	PlayerID     int     `json:"player_id,omitempty"`
-	Direction    string  `json:"direction,omitempty"`
-	BallPosition Vector  `json:"ball_position,omitempty"`
-	Paddle1Y     float64 `json:"paddle1_y,omitempty"`
-	Paddle2Y     float64 `json:"paddle2_y,omitempty"`
+	Event        string               `json:"event"`
+	PlayerID     string               `json:"player_id,omitempty"`
+	Direction    string               `json:"direction,omitempty"`
+	GameState    game.GameStateStruct `json:"game_state,omitempty"`
+	BallPosition *game.Vector         `json:"ball_position,omitempty"`
+	Paddle1Y     float64              `json:"paddle1_y,omitempty"`
+	Paddle2Y     float64              `json:"paddle2_y,omitempty"`
 }
 
 // Vector para representar coordenadas

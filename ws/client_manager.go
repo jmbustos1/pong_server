@@ -6,7 +6,6 @@ import (
 	"pong_server/game"
 )
 
-// HandleConnections gestiona las conexiones WebSocket de los clientes
 func HandleConnections(w http.ResponseWriter, r *http.Request) {
 	ws, err := Upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -20,7 +19,6 @@ func HandleConnections(w http.ResponseWriter, r *http.Request) {
 	Clients.m[ws] = true
 	Clients.Unlock()
 
-	// Leer mensajes del cliente
 	for {
 		var msg Message
 		err := ws.ReadJSON(&msg)
@@ -32,16 +30,24 @@ func HandleConnections(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 
-		// Procesar mensajes según el evento
 		switch msg.Event {
 		case "move_paddle":
-			game.UpdatePaddlePosition(msg.PlayerID, msg.Paddle1Y)
-			// case "ball_update":
-			// 	game.UpdateBallPosition(msg.BallPosition)
+			if msg.PlayerID == "1" && msg.Direction == "up" && game.GameState.Paddle1Y > 0 {
+				game.GameState.Paddle1Y -= game.PaddleSpeed
+			} else if msg.PlayerID == "1" && msg.Direction == "down" && game.GameState.Paddle1Y < game.ScreenHeight-game.PaddleHeight {
+				game.GameState.Paddle1Y += game.PaddleSpeed
+			} else if msg.PlayerID == "2" && msg.Direction == "up" && game.GameState.Paddle2Y > 0 {
+				game.GameState.Paddle2Y -= game.PaddleSpeed
+			} else if msg.PlayerID == "2" && msg.Direction == "down" && game.GameState.Paddle2Y < game.ScreenHeight-game.PaddleHeight {
+				game.GameState.Paddle2Y += game.PaddleSpeed
+			}
 		}
 
-		// Enviar mensaje al canal broadcast
-		Broadcast <- msg
+		// Broadcast del estado del juego actualizado
+		Broadcast <- Message{
+			Event:     "sync_game_state",
+			GameState: game.GameState,
+		}
 	}
 }
 
@@ -49,6 +55,7 @@ func HandleMessages() {
 	for {
 		// Recibir un mensaje del canal broadcast
 		msg := <-Broadcast
+		log.Printf("Transmitiendo mensaje a todos los clientes: %+v\n", msg)
 
 		// Enviar el mensaje a todos los clientes conectados
 		Clients.Lock()
