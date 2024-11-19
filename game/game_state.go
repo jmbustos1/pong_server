@@ -21,6 +21,10 @@ type GameStateStruct struct {
 	Paddle1Y      float64 `json:"paddle1_y"`
 	Paddle2Y      float64 `json:"paddle2_y"`
 }
+type GameSession struct {
+	ID        string
+	GameState GameStateStruct
+}
 
 // Estado global del juego
 var GameState = GameStateStruct{
