@@ -13,10 +13,13 @@ func HandleConnections(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer ws.Close()
+	// Generar un PlayerID único
+	playerID := generatePlayerID()
+	client := &Client{Conn: ws, PlayerID: playerID}
 
 	// Registrar el nuevo cliente
 	Clients.Lock()
-	Clients.m[ws] = true
+	Clients.m[playerID] = client
 	Clients.Unlock()
 
 	for {

@@ -15,14 +15,34 @@ var Upgrader = websocket.Upgrader{
 	},
 }
 
+// Cliente conectado
+type Client struct {
+	Conn     *websocket.Conn
+	PlayerID string
+	LobbyID  string
+}
+
 // Mapa seguro para manejar clientes
 var Clients = struct {
 	sync.Mutex
-	m map[*websocket.Conn]bool
-}{m: make(map[*websocket.Conn]bool)}
+	m map[string]*Client
+}{m: make(map[string]*Client)}
 
 // Canal para mensajes entre clientes
 var Broadcast = make(chan Message)
+
+// Lobby para manejar jugadores
+type Lobby struct {
+	ID      string
+	Players []*Client
+	Started bool
+}
+
+// Mapa de lobbies
+var Lobbies = struct {
+	sync.Mutex
+	m map[string]*Lobby
+}{m: make(map[string]*Lobby)}
 
 // Estructura para mensajes
 type Message struct {
