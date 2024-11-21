@@ -31,19 +31,6 @@ var Clients = struct {
 // Canal para mensajes entre clientes
 var Broadcast = make(chan Message)
 
-// Lobby para manejar jugadores
-type Lobby struct {
-	ID      string
-	Players []*Client
-	Started bool
-}
-
-// Mapa de lobbies
-var Lobbies = struct {
-	sync.Mutex
-	m map[string]*Lobby
-}{m: make(map[string]*Lobby)}
-
 // Estructura para mensajes
 type Message struct {
 	Event        string               `json:"event"`
@@ -53,6 +40,7 @@ type Message struct {
 	BallPosition *game.Vector         `json:"ball_position,omitempty"`
 	Paddle1Y     float64              `json:"paddle1_y,omitempty"`
 	Paddle2Y     float64              `json:"paddle2_y,omitempty"`
+	LobbyID      string               `json:"lobby_id,omitempty"`
 }
 
 // Vector para representar coordenadas

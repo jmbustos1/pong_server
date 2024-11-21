@@ -28,7 +28,7 @@ func HandleConnections(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Println("Error al leer el mensaje:", err)
 			Clients.Lock()
-			delete(Clients.m, ws)
+			Clients.m[playerID] = client
 			Clients.Unlock()
 			break
 		}
@@ -62,12 +62,12 @@ func HandleMessages() {
 
 		// Enviar el mensaje a todos los clientes conectados
 		Clients.Lock()
-		for client := range Clients.m {
-			err := client.WriteJSON(msg)
+		for _, client := range Clients.m { // Cambiado para iterar sobre el nuevo mapa
+			err := client.Conn.WriteJSON(msg) // Accede a la conexión WebSocket
 			if err != nil {
 				log.Println("Error al enviar mensaje:", err)
-				client.Close()
-				delete(Clients.m, client)
+				client.Conn.Close()
+				delete(Clients.m, client.PlayerID) // Elimina por PlayerID
 			}
 		}
 		Clients.Unlock()
