@@ -8,7 +8,9 @@ import (
 // Lobby para manejar jugadores
 type Lobby struct {
 	ID      string
+	Name    string
 	Players []*ws.Client
+	Host    []*ws.Client
 	Started bool
 }
 
@@ -18,25 +20,21 @@ var Lobbies = struct {
 	m map[string]*Lobby
 }{m: make(map[string]*Lobby)}
 
-// Crear un lobby
-func handleCreateLobby(client *ws.Client) {
+func handleCreateLobby(msg ws.Message, client *ws.Client) {
 	lobbyID := generateLobbyID()
-	lobby := &Lobby{
+	newLobby := &Lobby{
 		ID:      lobbyID,
+		Name:    msg.LobbyName,
+		Host:    client,
 		Players: []*ws.Client{client},
-		Started: false,
 	}
-
-	// Registrar lobby
 	Lobbies.Lock()
-	Lobbies.m[lobbyID] = lobby
+	Lobbies.m[lobbyID] = newLobby
 	Lobbies.Unlock()
 
-	client.LobbyID = lobbyID
-
-	// Responder al cliente
-	client.Conn.WriteJSON(ws.Message{
-		Event:   "lobby_created",
-		LobbyID: lobbyID,
+	client.SendMessage(Message{
+		Event:     "lobby_created",
+		LobbyID:   lobbyID,
+		LobbyName: msg.LobbyName,
 	})
 }
