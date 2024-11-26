@@ -41,6 +41,8 @@ type Message struct {
 	Paddle1Y     float64              `json:"paddle1_y,omitempty"`
 	Paddle2Y     float64              `json:"paddle2_y,omitempty"`
 	LobbyID      string               `json:"lobby_id,omitempty"`
+	LobbyName    string               `json:"lobby_name,omitempty"`
+	Data         string               `json:"data,omitempty"`
 }
 
 // Vector para representar coordenadas

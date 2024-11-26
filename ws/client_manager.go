@@ -54,6 +54,17 @@ func HandleConnections(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// Método para enviar un mensaje a un cliente
+func (c *Client) SendMessage(msg interface{}) {
+	err := c.Conn.WriteJSON(msg)
+	if err != nil {
+		log.Printf("Error al enviar mensaje al cliente %s: %v\n", c.PlayerID, err)
+		c.Conn.Close()
+		Clients.Lock()
+		delete(Clients.m, c.PlayerID) // Elimina el cliente del mapa por PlayerID
+		Clients.Unlock()
+	}
+}
 func HandleMessages() {
 	for {
 		// Recibir un mensaje del canal broadcast
@@ -62,13 +73,8 @@ func HandleMessages() {
 
 		// Enviar el mensaje a todos los clientes conectados
 		Clients.Lock()
-		for _, client := range Clients.m { // Cambiado para iterar sobre el nuevo mapa
-			err := client.Conn.WriteJSON(msg) // Accede a la conexión WebSocket
-			if err != nil {
-				log.Println("Error al enviar mensaje:", err)
-				client.Conn.Close()
-				delete(Clients.m, client.PlayerID) // Elimina por PlayerID
-			}
+		for _, client := range Clients.m {
+			client.SendMessage(msg) // Usa el método SendMessage del cliente
 		}
 		Clients.Unlock()
 	}

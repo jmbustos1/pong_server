@@ -10,7 +10,7 @@ type Lobby struct {
 	ID      string
 	Name    string
 	Players []*ws.Client
-	Host    []*ws.Client
+	Host    *ws.Client
 	Started bool
 }
 
@@ -21,20 +21,74 @@ var Lobbies = struct {
 }{m: make(map[string]*Lobby)}
 
 func handleCreateLobby(msg ws.Message, client *ws.Client) {
-	lobbyID := generateLobbyID()
+	if msg.LobbyName == "" {
+		client.SendMessage(ws.Message{
+			Event: "error",
+			Data:  "Lobby name cannot be empty",
+		})
+		return
+	}
+
+	lobbyID := generateLobbyID() // Función para generar IDs únicos para lobbies
 	newLobby := &Lobby{
 		ID:      lobbyID,
 		Name:    msg.LobbyName,
 		Host:    client,
 		Players: []*ws.Client{client},
+		Started: false,
 	}
+
+	// Registrar el lobby
 	Lobbies.Lock()
 	Lobbies.m[lobbyID] = newLobby
 	Lobbies.Unlock()
 
-	client.SendMessage(Message{
+	// Asociar al cliente con el lobby
+	client.LobbyID = lobbyID
+
+	// Notificar al cliente que el lobby fue creado
+	client.SendMessage(ws.Message{
 		Event:     "lobby_created",
 		LobbyID:   lobbyID,
 		LobbyName: msg.LobbyName,
 	})
+}
+
+func handleJoinLobby(msg ws.Message, client *ws.Client) {
+	lobbyID := msg.LobbyID
+
+	// Validar que el lobby exista
+	Lobbies.Lock()
+	lobby, exists := Lobbies.m[lobbyID]
+	Lobbies.Unlock()
+	if !exists {
+		client.SendMessage(ws.Message{
+			Event: "error",
+			Data:  "Lobby not found",
+		})
+		return
+	}
+
+	// Agregar al cliente al lobby
+	Lobbies.Lock()
+	lobby.Players = append(lobby.Players, client)
+	Lobbies.Unlock()
+
+	// Asociar al cliente con el lobby
+	client.LobbyID = lobbyID
+
+	// Notificar al cliente que se unió al lobby
+	client.SendMessage(ws.Message{
+		Event:     "joined_lobby",
+		LobbyID:   lobby.ID,
+		LobbyName: lobby.Name,
+	})
+
+	// Notificar a los jugadores en el lobby
+	for _, player := range lobby.Players {
+		player.SendMessage(ws.Message{
+			Event:    "player_joined",
+			PlayerID: client.PlayerID,
+		})
+	}
 }
