@@ -92,3 +92,40 @@ func handleJoinLobby(msg ws.Message, client *ws.Client) {
 		})
 	}
 }
+
+func handleStartGame(msg ws.Message, client *ws.Client) {
+	lobbyID := client.LobbyID
+
+	// Validar que el lobby exista
+	Lobbies.Lock()
+	lobby, exists := Lobbies.m[lobbyID]
+	Lobbies.Unlock()
+	if !exists {
+		client.SendMessage(ws.Message{
+			Event: "error",
+			Data:  "Lobby not found",
+		})
+		return
+	}
+
+	// Verificar que el cliente sea el host del lobby
+	if lobby.Host != client {
+		client.SendMessage(ws.Message{
+			Event: "error",
+			Data:  "Only the host can start the game",
+		})
+		return
+	}
+
+	// Marcar el juego como iniciado
+	Lobbies.Lock()
+	lobby.Started = true
+	Lobbies.Unlock()
+
+	// Notificar a los jugadores que el juego ha comenzado
+	for _, player := range lobby.Players {
+		player.SendMessage(ws.Message{
+			Event: "game_started",
+		})
+	}
+}
