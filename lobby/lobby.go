@@ -129,3 +129,9 @@ func handleStartGame(msg ws.Message, client *ws.Client) {
 		})
 	}
 }
+
+func (l *Lobby) BroadcastToPlayers(msg ws.Message) {
+	for _, player := range l.Players {
+		player.SendMessage(msg)
+	}
+}
