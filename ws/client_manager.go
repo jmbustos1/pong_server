@@ -21,6 +21,7 @@ func HandleConnections(w http.ResponseWriter, r *http.Request) {
 	Clients.Lock()
 	Clients.m[playerID] = client
 	Clients.Unlock()
+	log.Println("NEW CLIENT ADDED", client.PlayerID)
 
 	for {
 		var msg Message
