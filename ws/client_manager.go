@@ -66,17 +66,17 @@ func (c *Client) SendMessage(msg interface{}) {
 		Clients.Unlock()
 	}
 }
-func HandleMessages() {
-	for {
-		// Recibir un mensaje del canal broadcast
-		msg := <-Broadcast
-		log.Printf("Transmitiendo mensaje a todos los clientes: %+v\n", msg)
 
-		// Enviar el mensaje a todos los clientes conectados
-		Clients.Lock()
-		for _, client := range Clients.m {
-			client.SendMessage(msg) // Usa el método SendMessage del cliente
+func BroadcastMessage(msg interface{}) {
+	Clients.Lock()
+	defer Clients.Unlock()
+
+	for _, client := range Clients.m {
+		err := client.Conn.WriteJSON(msg)
+		if err != nil {
+			log.Printf("Error al enviar mensaje al cliente %s: %v\n", client.PlayerID, err)
+			client.Conn.Close()
+			delete(Clients.m, client.PlayerID)
 		}
-		Clients.Unlock()
 	}
 }

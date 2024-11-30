@@ -1,6 +1,7 @@
 package lobby
 
 import (
+	"log"
 	"pong_server/ws"
 	"sync"
 )
@@ -17,8 +18,8 @@ type Lobby struct {
 // Mapa de lobbies
 var Lobbies = struct {
 	sync.Mutex
-	m map[string]*Lobby
-}{m: make(map[string]*Lobby)}
+	M map[string]*Lobby
+}{M: make(map[string]*Lobby)}
 
 func handleCreateLobby(msg ws.Message, client *ws.Client) {
 	if msg.LobbyName == "" {
@@ -40,7 +41,7 @@ func handleCreateLobby(msg ws.Message, client *ws.Client) {
 
 	// Registrar el lobby
 	Lobbies.Lock()
-	Lobbies.m[lobbyID] = newLobby
+	Lobbies.M[lobbyID] = newLobby
 	Lobbies.Unlock()
 
 	// Asociar al cliente con el lobby
@@ -59,7 +60,7 @@ func handleJoinLobby(msg ws.Message, client *ws.Client) {
 
 	// Validar que el lobby exista
 	Lobbies.Lock()
-	lobby, exists := Lobbies.m[lobbyID]
+	lobby, exists := Lobbies.M[lobbyID]
 	Lobbies.Unlock()
 	if !exists {
 		client.SendMessage(ws.Message{
@@ -98,7 +99,7 @@ func handleStartGame(msg ws.Message, client *ws.Client) {
 
 	// Validar que el lobby exista
 	Lobbies.Lock()
-	lobby, exists := Lobbies.m[lobbyID]
+	lobby, exists := Lobbies.M[lobbyID]
 	Lobbies.Unlock()
 	if !exists {
 		client.SendMessage(ws.Message{
@@ -133,5 +134,38 @@ func handleStartGame(msg ws.Message, client *ws.Client) {
 func (l *Lobby) BroadcastToPlayers(msg ws.Message) {
 	for _, player := range l.Players {
 		player.SendMessage(msg)
+	}
+}
+
+func (l *Lobby) BroadcastMessageToLobby(msg interface{}) {
+	for _, client := range l.Players {
+		err := client.Conn.WriteJSON(msg)
+		if err != nil {
+			log.Printf("Error al enviar mensaje al cliente %s: %v\n", client.PlayerID, err)
+			client.Conn.Close()
+			removeClientFromLobby(client.PlayerID, l.ID)
+		}
+	}
+}
+
+func removeClientFromLobby(playerID string, lobbyID string) {
+	Lobbies.Lock()
+	defer Lobbies.Unlock()
+
+	if lobby, exists := Lobbies.M[lobbyID]; exists {
+		// Filtra los jugadores para eliminar al cliente
+		var updatedPlayers []*ws.Client
+		for _, player := range lobby.Players {
+			if player.PlayerID != playerID {
+				updatedPlayers = append(updatedPlayers, player)
+			}
+		}
+		lobby.Players = updatedPlayers
+
+		// Si no quedan jugadores, puedes eliminar el lobby
+		if len(lobby.Players) == 0 {
+			delete(Lobbies.M, lobbyID)
+			log.Printf("Lobby %s eliminado porque no quedan jugadores.\n", lobbyID)
+		}
 	}
 }
