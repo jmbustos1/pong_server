@@ -25,8 +25,8 @@ type Client struct {
 // Mapa seguro para manejar clientes
 var Clients = struct {
 	sync.Mutex
-	m map[string]*Client
-}{m: make(map[string]*Client)}
+	M map[string]*Client
+}{M: make(map[string]*Client)}
 
 // Canal para mensajes entre clientes
 var Broadcast = make(chan Message)
@@ -43,6 +43,7 @@ type Message struct {
 	LobbyID      string               `json:"lobby_id,omitempty"`
 	LobbyName    string               `json:"lobby_name,omitempty"`
 	Data         string               `json:"data,omitempty"`
+	Lobbies      []string             `json:"lobbies,omitempty"`
 }
 
 // Vector para representar coordenadas
