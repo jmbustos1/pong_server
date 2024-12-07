@@ -8,6 +8,7 @@ import (
 )
 
 func HandleMessages() {
+
 	for {
 		msg := <-ws.Broadcast
 		log.Printf("Recibido mensaje: %+v\n", msg)
@@ -40,6 +41,14 @@ func HandleMessages() {
 					log.Println("Lobby no encontrado:", lobbyID)
 				}
 				lobby.Lobbies.Unlock()
+			}
+		case "create_lobby":
+			if client, exists := ws.Clients.M[msg.PlayerID]; exists {
+				log.Printf("Recibido mensaje: %+v\n", ws.Clients.M[msg.PlayerID])
+				lobby.HandleCreateLobby(msg, client)
+
+			} else {
+				log.Println("Cliente no encontrado para crear lobby:", msg.PlayerID)
 			}
 
 		case "leave_lobby":
