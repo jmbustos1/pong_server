@@ -26,6 +26,49 @@ func HandleMessages() {
 				}
 			}
 			lobby.Lobbies.Unlock()
+
+		case "join_lobby":
+			// Manejar el evento `join_lobby`
+			if client, exists := ws.Clients.M[msg.PlayerID]; exists {
+				lobbyID := msg.LobbyID
+				lobby.Lobbies.Lock()
+				if lobbyInstance, exists := lobby.Lobbies.M[lobbyID]; exists {
+					lobbyInstance.Players = append(lobbyInstance.Players, client) // Agregar jugador al lobby
+					client.LobbyID = lobbyID                                      // Asociar cliente al lobby
+					lobby.UpdateLobbyPlayers(lobbyID)                             // Llamar a la función global
+				} else {
+					log.Println("Lobby no encontrado:", lobbyID)
+				}
+				lobby.Lobbies.Unlock()
+			}
+
+		case "leave_lobby":
+			// Manejar el evento `leave_lobby`
+			if client, exists := ws.Clients.M[msg.PlayerID]; exists {
+				lobbyID := client.LobbyID
+				lobby.Lobbies.Lock()
+				if lobbyInstance, exists := lobby.Lobbies.M[lobbyID]; exists {
+					// Remover jugador del lobby
+					for i, p := range lobbyInstance.Players {
+						if p.PlayerID == client.PlayerID {
+							lobbyInstance.Players = append(lobbyInstance.Players[:i], lobbyInstance.Players[i+1:]...)
+							break
+						}
+					}
+					client.LobbyID = ""               // Desasociar cliente del lobby
+					lobby.UpdateLobbyPlayers(lobbyID) // Actualizar jugadores
+				} else {
+					log.Println("Lobby no encontrado:", lobbyID)
+				}
+				lobby.Lobbies.Unlock()
+			}
+
+		case "get_lobbies":
+			// Manejar el evento `get_lobbies`
+			if client, exists := ws.Clients.M[msg.PlayerID]; exists {
+				lobby.HandleGetLobbies(client)
+			}
+
 		default:
 			ws.BroadcastMessage(msg)
 		}
