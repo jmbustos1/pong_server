@@ -3,9 +3,9 @@ package ws
 import (
 	"log"
 	"net/http"
-	"pong_server/game"
 )
 
+// // CAMBIAR A ESTRUCTURA DE MENSJAE
 func HandleConnections(w http.ResponseWriter, r *http.Request) {
 	ws, err := Upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -13,15 +13,21 @@ func HandleConnections(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer ws.Close()
+
 	// Generar un PlayerID único
 	playerID := generatePlayerID()
 	client := &Client{Conn: ws, PlayerID: playerID}
 
 	// Registrar el nuevo cliente
 	Clients.Lock()
-	Clients.m[playerID] = client
+	Clients.M[playerID] = client
 	Clients.Unlock()
+
 	log.Println("NEW CLIENT ADDED", client.PlayerID)
+	client.SendMessage(Message{
+		Event: "test_message",
+		Data:  "Conexión establecida correctamente HOLAAAAAA",
+	})
 
 	for {
 		var msg Message
@@ -29,29 +35,16 @@ func HandleConnections(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Println("Error al leer el mensaje:", err)
 			Clients.Lock()
-			Clients.m[playerID] = client
+			delete(Clients.M, playerID)
 			Clients.Unlock()
 			break
 		}
 
-		switch msg.Event {
-		case "move_paddle":
-			if msg.PlayerID == "1" && msg.Direction == "up" && game.GameState.Paddle1Y > 0 {
-				game.GameState.Paddle1Y -= game.PaddleSpeed
-			} else if msg.PlayerID == "1" && msg.Direction == "down" && game.GameState.Paddle1Y < game.ScreenHeight-game.PaddleHeight {
-				game.GameState.Paddle1Y += game.PaddleSpeed
-			} else if msg.PlayerID == "2" && msg.Direction == "up" && game.GameState.Paddle2Y > 0 {
-				game.GameState.Paddle2Y -= game.PaddleSpeed
-			} else if msg.PlayerID == "2" && msg.Direction == "down" && game.GameState.Paddle2Y < game.ScreenHeight-game.PaddleHeight {
-				game.GameState.Paddle2Y += game.PaddleSpeed
-			}
-		}
+		// Añadir PlayerID al mensaje
+		msg.PlayerID = playerID
 
-		// Broadcast del estado del juego actualizado
-		Broadcast <- Message{
-			Event:     "sync_game_state",
-			GameState: game.GameState,
-		}
+		// Enviar mensaje al canal Broadcast
+		Broadcast <- msg
 	}
 }
 
@@ -62,7 +55,7 @@ func (c *Client) SendMessage(msg interface{}) {
 		log.Printf("Error al enviar mensaje al cliente %s: %v\n", c.PlayerID, err)
 		c.Conn.Close()
 		Clients.Lock()
-		delete(Clients.m, c.PlayerID) // Elimina el cliente del mapa por PlayerID
+		delete(Clients.M, c.PlayerID) // Elimina el cliente del mapa por PlayerID
 		Clients.Unlock()
 	}
 }
@@ -71,12 +64,12 @@ func BroadcastMessage(msg interface{}) {
 	Clients.Lock()
 	defer Clients.Unlock()
 
-	for _, client := range Clients.m {
+	for _, client := range Clients.M {
 		err := client.Conn.WriteJSON(msg)
 		if err != nil {
 			log.Printf("Error al enviar mensaje al cliente %s: %v\n", client.PlayerID, err)
 			client.Conn.Close()
-			delete(Clients.m, client.PlayerID)
+			delete(Clients.M, client.PlayerID)
 		}
 	}
 }
