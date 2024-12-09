@@ -21,7 +21,7 @@ var Lobbies = struct {
 	M map[string]*Lobby
 }{M: make(map[string]*Lobby)}
 
-func handleCreateLobby(msg ws.Message, client *ws.Client) {
+func HandleCreateLobby(msg ws.Message, client *ws.Client) {
 	if msg.LobbyName == "" {
 		client.SendMessage(ws.Message{
 			Event: "error",
@@ -53,6 +53,8 @@ func handleCreateLobby(msg ws.Message, client *ws.Client) {
 		LobbyID:   lobbyID,
 		LobbyName: msg.LobbyName,
 	})
+	log.Printf("Lobby creado: %s con ID: %s", msg.LobbyName, lobbyID)
+	log.Printf("Lobby creado: %s", Lobbies)
 }
 
 func handleJoinLobby(msg ws.Message, client *ws.Client) {
@@ -166,6 +168,41 @@ func removeClientFromLobby(playerID string, lobbyID string) {
 		if len(lobby.Players) == 0 {
 			delete(Lobbies.M, lobbyID)
 			log.Printf("Lobby %s eliminado porque no quedan jugadores.\n", lobbyID)
+		}
+	}
+}
+
+func HandleGetLobbies(client *ws.Client) {
+	lobbies := []string{}
+	Lobbies.Lock()
+	for _, lobby := range Lobbies.M {
+		lobbies = append(lobbies, lobby.Name)
+	}
+	Lobbies.Unlock()
+
+	client.SendMessage(ws.Message{
+		Event:   "lobbies_list",
+		Lobbies: lobbies,
+	})
+}
+
+// Función para actualizar los jugadores en un lobby
+func UpdateLobbyPlayers(lobbyID string) {
+	Lobbies.Lock()
+	defer Lobbies.Unlock()
+
+	if lobby, exists := Lobbies.M[lobbyID]; exists {
+		playerNames := []string{}
+		for _, player := range lobby.Players {
+			playerNames = append(playerNames, player.PlayerID) // Usa el ID del jugador
+		}
+
+		// Enviar la lista actualizada a los jugadores
+		for _, client := range lobby.Players {
+			client.SendMessage(ws.Message{
+				Event:   "lobby_players",
+				Lobbies: playerNames,
+			})
 		}
 	}
 }
