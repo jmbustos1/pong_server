@@ -58,7 +58,7 @@ func HandleCreateLobby(msg ws.Message, client *ws.Client) {
 	fmt.Printf("Lobby creado: %s", Lobbies)
 }
 
-func handleJoinLobby(msg ws.Message, client *ws.Client) {
+func HandleJoinLobby(msg ws.Message, client *ws.Client) {
 	lobbyID := msg.LobbyID
 
 	// Validar que el lobby exista
@@ -174,16 +174,22 @@ func removeClientFromLobby(playerID string, lobbyID string) {
 }
 
 func HandleGetLobbies(client *ws.Client) {
-	lobbies := []string{}
+	// Crear una lista de estructuras Lobby con ID y Name
+	lobbies := []map[string]string{}
+
 	Lobbies.Lock()
 	for _, lobby := range Lobbies.M {
-		lobbies = append(lobbies, lobby.Name)
+		lobbies = append(lobbies, map[string]string{
+			"id":   lobby.ID,   // Agrega el ID
+			"name": lobby.Name, // Agrega el nombre
+		})
 	}
 	Lobbies.Unlock()
 
+	// Envía la lista de lobbies al cliente
 	client.SendMessage(ws.Message{
 		Event:   "lobbies_list",
-		Lobbies: lobbies,
+		Lobbies: lobbies, // Enviar lista completa
 	})
 }
 
