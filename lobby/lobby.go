@@ -1,6 +1,7 @@
 package lobby
 
 import (
+	"fmt"
 	"log"
 	"pong_server/ws"
 	"sync"
@@ -54,7 +55,7 @@ func HandleCreateLobby(msg ws.Message, client *ws.Client) {
 		LobbyName: msg.LobbyName,
 	})
 	log.Printf("Lobby creado: %s con ID: %s", msg.LobbyName, lobbyID)
-	log.Printf("Lobby creado: %s", Lobbies)
+	fmt.Printf("Lobby creado: %s", Lobbies)
 }
 
 func handleJoinLobby(msg ws.Message, client *ws.Client) {
