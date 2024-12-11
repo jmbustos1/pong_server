@@ -29,18 +29,10 @@ func HandleMessages() {
 			lobby.Lobbies.Unlock()
 
 		case "join_lobby":
-			// Manejar el evento `join_lobby`
 			if client, exists := ws.Clients.M[msg.PlayerID]; exists {
-				lobbyID := msg.LobbyID
-				lobby.Lobbies.Lock()
-				if lobbyInstance, exists := lobby.Lobbies.M[lobbyID]; exists {
-					lobbyInstance.Players = append(lobbyInstance.Players, client) // Agregar jugador al lobby
-					client.LobbyID = lobbyID                                      // Asociar cliente al lobby
-					lobby.UpdateLobbyPlayers(lobbyID)                             // Llamar a la función global
-				} else {
-					log.Println("Lobby no encontrado:", lobbyID)
-				}
-				lobby.Lobbies.Unlock()
+				lobby.HandleJoinLobby(msg, client)
+			} else {
+				log.Println("Cliente no encontrado para unirse al lobby:", msg.PlayerID)
 			}
 		case "create_lobby":
 			if client, exists := ws.Clients.M[msg.PlayerID]; exists {
