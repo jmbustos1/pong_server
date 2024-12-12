@@ -43,7 +43,7 @@ type Message struct {
 	LobbyID      string               `json:"lobby_id,omitempty"`
 	LobbyName    string               `json:"lobby_name,omitempty"`
 	Data         string               `json:"data,omitempty"`
-	Lobbies      []string             `json:"lobbies,omitempty"`
+	Lobbies      interface{}          `json:"lobbies,omitempty"` // Hacerlo más flexible
 }
 
 // Vector para representar coordenadas
