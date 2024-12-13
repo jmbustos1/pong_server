@@ -95,6 +95,26 @@ func HandleJoinLobby(msg ws.Message, client *ws.Client) {
 			PlayerID: client.PlayerID,
 		})
 	}
+	// Enviar lista actualizada de jugadores a todos en el lobby
+	updateLobbyPlayers(lobby)
+}
+
+// Función auxiliar para notificar jugadores actualizados en un lobby
+func updateLobbyPlayers(lobby *Lobby) {
+	playerNames := []string{}
+	for _, player := range lobby.Players {
+		playerNames = append(playerNames, player.PlayerID)
+	}
+
+	// Enviar la lista actualizada a todos los jugadores en el lobby
+	for _, player := range lobby.Players {
+		player.SendMessage(ws.Message{
+			Event:     "lobby_players",
+			Lobbies:   playerNames, // Enviar los IDs de los jugadores
+			LobbyID:   lobby.ID,
+			LobbyName: lobby.Name,
+		})
+	}
 }
 
 func handleStartGame(msg ws.Message, client *ws.Client) {
