@@ -44,7 +44,6 @@ func HandleMessages() {
 			}
 
 		case "leave_lobby":
-			// Manejar el evento `leave_lobby`
 			if client, exists := ws.Clients.M[msg.PlayerID]; exists {
 				lobbyID := client.LobbyID
 				lobby.Lobbies.Lock()
@@ -56,8 +55,19 @@ func HandleMessages() {
 							break
 						}
 					}
-					client.LobbyID = ""               // Desasociar cliente del lobby
-					lobby.UpdateLobbyPlayers(lobbyID) // Actualizar jugadores
+					client.LobbyID = "" // Desasociar cliente del lobby
+
+					// Enviar la lista actualizada de jugadores a todos los jugadores restantes
+					lobby.UpdateLobbyPlayers(lobbyInstance)
+
+					// Eliminar el lobby si no quedan jugadores
+					if len(lobbyInstance.Players) == 0 {
+						lobby.Lobbies.Unlock()
+						delete(lobby.Lobbies.M, lobbyID)
+						log.Printf("Lobby %s eliminado porque no quedan jugadores.\n", lobbyID)
+						// Notificar a todos los clientes que la lista de lobbies ha cambiado
+						lobby.NotifyAllClientsWithLobbies()
+					}
 				} else {
 					log.Println("Lobby no encontrado:", lobbyID)
 				}
