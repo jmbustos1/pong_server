@@ -62,7 +62,7 @@ func HandleMessages() {
 
 					// Eliminar el lobby si no quedan jugadores
 					if len(lobbyInstance.Players) == 0 {
-						lobby.Lobbies.Unlock()
+						// lobby.Lobbies.Unlock()
 						delete(lobby.Lobbies.M, lobbyID)
 						log.Printf("Lobby %s eliminado porque no quedan jugadores.\n", lobbyID)
 						// Notificar a todos los clientes que la lista de lobbies ha cambiado
